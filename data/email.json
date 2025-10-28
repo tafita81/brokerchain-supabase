@@ -1,0 +1,24 @@
+{
+  "mode": "supervised_auto",
+  "sign_with_name": false,
+  "default_tone": "short, human, confident, friendly, zero fluff, American business style",
+  "from_email": "contact@blokerchain.business",
+  "imap": {
+    "host": "imap.hostinger.com",
+    "port": 993,
+    "secure": true,
+    "user": "contact@blokerchain.business",
+    "pass": "CHANGE_ME_IMAP_PASSWORD"
+  },
+  "smtp": {
+    "host": "smtp.hostinger.com",
+    "port": 465,
+    "secure": true,
+    "user": "contact@blokerchain.business",
+    "pass": "CHANGE_ME_SMTP_PASSWORD"
+  },
+  "openai_model": "gpt-4o-mini",
+  "openai_base_url": "https://api.openai.com/v1/chat/completions",
+  "notes": "AI answers as Dispatch / Procurement Desk. Collects ZIP, urgency, and 'authorized under $15k?' for public sector. Never signs with a personal name.",
+  "tone": "short, human, confident, friendly, zero fluff, US business voice. Do not sign with personal name. Sign as Sales or Support when needed."
+}

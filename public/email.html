@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Email / AI Desk — BrokerChain Internal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; }
+    .btn-primary { @apply bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded; }
+    .btn-secondary { @apply bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium px-4 py-2 rounded border border-slate-600; }
+    .card { @apply bg-slate-900 border border-slate-800 rounded-lg p-4 mb-4 shadow-lg shadow-black/40; }
+    .label { @apply block text-slate-300 text-sm font-medium mb-1; }
+    .input { @apply w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 text-sm; }
+    .textarea { @apply w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 text-sm h-32; }
+    .select { @apply w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 text-sm; }
+    code { @apply text-indigo-300 text-[11px] bg-slate-800/50 px-1 py-0.5 rounded; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100">
+<header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div class="text-xl font-semibold text-white">BrokerChain Dispatch Desk</div>
+    <nav class="flex flex-wrap gap-4 text-sm text-slate-300">
+      <a class="hover:text-white" href="/index.html">Home</a>
+      <a class="hover:text-white" href="/request.html">Request</a>
+      <a class="hover:text-white" href="/suppliers.html">Suppliers</a>
+      <a class="hover:text-white" href="/gov-fastlane.html">Gov Fastlane</a>
+      <a class="hover:text-white" href="/dashboard.html">Dashboard</a>
+    </nav>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-8">
+
+<h1 class="text-2xl font-semibold text-white mb-6">Email Intake & AI Desk</h1>
+
+<p class="text-slate-300 text-sm leading-relaxed mb-6">
+  The AI reads inbound email from contact@blokerchain.business (Hostinger IMAP),
+  classifies intent, asks only what matters (ZIP, urgency, insurance or under-$15k auth),
+  and drafts a short human reply as "Dispatch" / "Procurement Desk".
+  It also drafts first-contact outreach emails for scraped leads + scraped suppliers.
+</p>
+
+<div class="card">
+  <div class="text-white font-semibold text-sm mb-2">Test AI Reply Draft (incoming lead)</div>
+  <form id="draftForm" class="space-y-4 text-sm text-slate-300">
+    <div>
+      <label class="label">Context / last email from buyer</label>
+      <textarea class="textarea" id="ctx" placeholder="Example: Basement flooded in Houston, need pumps fast, city account, can pay with card."></textarea>
+    </div>
+    <div>
+      <label class="label">Intent</label>
+      <select class="select" id="intent">
+        <option value="emergency">emergency</option>
+        <option value="federal">federal</option>
+      </select>
+    </div>
+    <button class="btn-primary text-xs" id="btnDraft" type="button">GENERATE DRAFT</button>
+    <div id="draftMsg" class="text-[11px] text-slate-500 whitespace-pre-wrap"></div>
+  </form>
+</div>
+
+<div class="card mt-6">
+  <div class="text-white font-semibold text-sm mb-2">IMAP Poll (manual trigger)</div>
+  <p class="text-slate-300 text-sm leading-relaxed mb-3">
+    Clicking below simulates the scheduled inbox poll. In production this runs every 5 minutes
+    and converts hot emails into sale_ready leads.
+  </p>
+  <button class="btn-secondary text-xs" id="btnPoll" type="button">RUN INBOX POLL NOW</button>
+  <div id="pollMsg" class="text-[11px] text-slate-500 mt-2"></div>
+</div>
+
+<div class="card mt-6">
+  <div class="text-white font-semibold text-sm mb-2">Outreach Draft (scraped leads & suppliers)</div>
+  <p class="text-slate-300 text-sm leading-relaxed mb-3">
+    This builds first-contact outreach emails for scraped buyers (needs like pumps/roof)
+    and scraped suppliers (contractors who could take paid jobs). This is 1:1 outreach,
+    not spam blast. You still must respect CAN-SPAM / platform ToS.
+  </p>
+  <button class="btn-secondary text-xs" id="btnOutreach" type="button">BUILD OUTREACH DRAFTS</button>
+  <div id="outreachMsg" class="text-[11px] text-slate-500 mt-2 whitespace-pre-wrap"></div>
+</div>
+
+<script>
+async function genDraft(){
+  const payload = {
+    thread:[{from:"buyer", text:document.getElementById('ctx').value.trim()}],
+    intent: document.getElementById('intent').value,
+    missing:["zip","urgency"]
+  };
+  const r = await fetch('/api/email-compose',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  const data = await r.json();
+  document.getElementById('draftMsg').textContent = data.draft || JSON.stringify(data);
+}
+async function pollInbox(){
+  const r = await fetch('/api/email-inbox',{method:'POST'});
+  const data = await r.json();
+  document.getElementById('pollMsg').textContent = JSON.stringify(data);
+}
+async function buildOutreach(){
+  const r = await fetch('/api/outreach-email',{method:'POST'});
+  const data = await r.json();
+  document.getElementById('outreachMsg').textContent = JSON.stringify(data, null, 2);
+}
+document.getElementById('btnDraft').addEventListener('click', genDraft);
+document.getElementById('btnPoll').addEventListener('click', pollInbox);
+document.getElementById('btnOutreach').addEventListener('click', buildOutreach);
+</script>
+
+</main>
+<footer class="border-t border-slate-800 text-slate-400 text-xs py-8 px-4 max-w-6xl mx-auto">
+  <div class="grid md:grid-cols-3 gap-6">
+    <div>
+      <div class="text-slate-200 font-semibold text-sm mb-2">Services</div>
+      <div class="space-y-1">
+        <div><a class="hover:text-white" href="/emergency-dispatch.html">Emergency Dispatch Exchange (EMERG-)</a></div>
+        <div><a class="hover:text-white" href="/gov-fastlane.html">Federal Micro‑Purchase Fastlane (FED-)</a></div>
+        <div><a class="hover:text-white" href="/suppliers.html">Suppliers / Contractors</a></div>
+        <div><a class="hover:text-white" href="/marketplace.html">Lead Marketplace</a></div>
+      </div>
+    </div>
+    <div>
+      <div class="text-slate-200 font-semibold text-sm mb-2">Company</div>
+      <div class="space-y-1">
+        <div><a class="hover:text-white" href="/about.html">About</a></div>
+        <div><a class="hover:text-white" href="/contact.html">Contact</a></div>
+        <div><a class="hover:text-white" href="/terms.html">Terms</a></div>
+      </div>
+    </div>
+    <div class="text-slate-400 text-xs">
+      <div>24/7 intake. We move first so downtime doesn’t win.</div>
+      <div class="mt-2 text-[10px] text-slate-500">
+        U.S. dispatch • Stripe • Mercury • DocuSign • SAM.gov vendor ready • micro‑purchase under $15k.
+      </div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

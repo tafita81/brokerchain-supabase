@@ -1,0 +1,7 @@
+{
+  "OPENAI_API_KEY": "PASTE_YOUR_OPENAI_KEY_HERE",
+  "EMAIL_IMAP_USER": "contact@blokerchain.business",
+  "EMAIL_IMAP_PASS": "PASTE_IMAP_PASSWORD_HERE",
+  "EMAIL_SMTP_USER": "contact@blokerchain.business",
+  "EMAIL_SMTP_PASS": "PASTE_SMTP_PASSWORD_HERE"
+}

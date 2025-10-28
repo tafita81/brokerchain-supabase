@@ -1,0 +1,18 @@
+{
+  "AUTO_DISPATCH_ENABLED": true,
+  "SCRAPER_ENABLED": true,
+  "OUTREACH_ENABLED": true,
+  "BRAIN_ENABLED": true,
+  "ALERT_EMAIL": "contact@blokerchain.business",
+  "LAST_UPDATED_UTC": "2025-10-28T00:54:59.935415Z",
+  "BILLING_ENABLED": true,
+  "DOCUSIGN_ENABLED": true,
+  "INBOX_ENABLED": true,
+  "CRAWLER_ENABLED": true,
+  "INTEL_ADVISOR_ENABLED": true,
+  "PRODUCTION_READY": false,
+  "BILLING_READY": false,
+  "EMAIL_READY": false,
+  "APPROVED_OUTREACH": false,
+  "DAILY_SUPPLIER_PING_ENABLED": true
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "id": "emergency-dispatch-exchange",
+    "name": "Emergency Dispatch Exchange",
+    "buyer_token_prefix": "EMERG-",
+    "voice_tone": "urgent, calm, confident, we\u2019ll handle this for you",
+    "offer_type": "emergency_field_service + urgent_parts_sourcing",
+    "billing_model": "stripe_per_job_dispatch",
+    "geo": "United States; global for high-stress sourcing (generators, pumps)",
+    "ticket_estimated": "High (USD 300\u20132k per visit; tens of thousands for roofing / storm insurance jobs)",
+    "notes": "24/7 capture. Ask ZIP, issue, urgency. Lock dispatch via Stripe + DocuSign. Push job to vetted local provider."
+  },
+  {
+    "id": "federal-micro-purchase-fastlane",
+    "name": "Federal Micro\u2011Purchase Fastlane",
+    "buyer_token_prefix": "FED-",
+    "voice_tone": "professional, compliant, straight to availability and delivery terms",
+    "offer_type": "urgent procurement under micro\u2011purchase threshold",
+    "billing_model": "stripe_upfront_parts",
+    "geo": "US Federal / State / Municipal / Critical Infra (nationwide)",
+    "ticket_estimated": "USD 5k\u201315k per order; repeatable",
+    "notes": "Fast quote < $15k, purchase card, DocuSign terms, Stripe link. Rapid sourcing for pumps/generators/safety gear."
+  },
+  {
+    "id": "solar-home-us",
+    "name": "Residential Solar Lock\u2011In",
+    "buyer_token_prefix": "SOLAR-",
+    "voice_tone": "friendly, money-saving, deadline-driven",
+    "offer_type": "residential_solar_install_lead",
+    "billing_model": "stripe_per_lead",
+    "geo": "United States (high solar demand states)",
+    "ticket_estimated": "20k+ per solar install contract",
+    "notes": "Close homeowners before incentive windows close. Installers pay high for hot leads."
+  }
+]

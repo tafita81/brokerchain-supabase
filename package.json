@@ -1,0 +1,19 @@
+{
+  "name": "brokerchain-v27_0-supabase",
+  "version": "27.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Static site - no build required'",
+    "deploy": "netlify deploy --prod",
+    "test": "echo 'No tests configured yet'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "node-fetch": "^2.6.9",
+    "uuid": "^9.0.1",
+    "nodemailer": "^6.9.0",
+    "stripe": "^14.0.0"
+  },
+  "description": "BrokerChain emergency lead broker / federal micro-purchase fastlane / solar urgency / global sourcing. Aut\u00f4nomo supervisionado."
+}

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#000;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BrokerChain • Setup / Produção</title>
+<style>
+body{
+  margin:0;
+  padding:16px;
+  background:#000;
+  color:#fff;
+  font-size:16px;
+  line-height:1.4rem;
+}
+.header-box{
+  border:1px solid #444;
+  border-radius:8px;
+  padding:16px;
+  margin-bottom:16px;
+  background:#0a0a0a;
+}
+.card{
+  border:1px solid #444;
+  border-radius:8px;
+  padding:16px;
+  background:#0a0a0a;
+  margin-bottom:16px;
+}
+.check-row{
+  border-left:4px solid transparent;
+  padding-left:8px;
+  margin-bottom:12px;
+}
+.check-row.pass{border-color:#0f0;}
+.check-row.fail{border-color:#f33;}
+.check-row.warn{border-color:#ff0;}
+.small{
+  font-size:0.75rem;
+  line-height:1rem;
+  color:#aaa;
+  word-break:break-word;
+}
+pre{
+  white-space:pre-wrap;
+  word-break:break-word;
+  background:#111;
+  color:#0ff;
+  padding:8px;
+  font-size:0.7rem;
+  border-radius:4px;
+  max-height:200px;
+  overflow:auto;
+}
+button{
+  background:#111;
+  color:#fff;
+  border:1px solid #444;
+  border-radius:6px;
+  font-size:0.9rem;
+  padding:10px 14px;
+  min-width:120px;
+}
+button:active{
+  background:#222;
+}
+.flex-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:flex-start;
+  margin-bottom:8px;
+}
+</style>
+</head>
+<body>
+
+<div class="header-box" id="overall_box">
+  <div id="overall_head" style="font-size:1.1rem;font-weight:600;margin-bottom:8px;">
+    Checking production readiness...
+  </div>
+  <div id="overall_desc" class="small">
+    Aguarde...
+  </div>
+</div>
+
+<div class="card">
+  <div class="flex-row">
+    <button onclick="runHealth('POST')">Re-testar agora</button>
+    <button onclick="window.location='/dashboard.html'">Voltar ao Painel</button>
+  </div>
+  <div class="small">
+    Enquanto houver falha vermelha:
+    - Stripe cobrança automática fica travado.
+    - E-mail comercial automático fica travado.
+    - Auto-Dispatch (mandar DocuSign + Stripe sozinho) fica travado.
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;font-size:1rem;">Checklist de Ativação</h2>
+  <div id="checks_container"></div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;font-size:1rem;">Estado Interno (debug)</h2>
+  <div class="flex-row">
+    <button onclick="toggleDebug()">Mostrar/Esconder Debug</button>
+  </div>
+  <pre id="debug_box" style="display:none;"></pre>
+  <div class="small">
+    PRODUCTION_READY = true significa que a BrokerChain pode operar 24/7,
+    mandar DocuSign/Stripe automático e enviar outreach humano curto.
+  </div>
+</div>
+
+<script>
+async function runHealth(method){
+  try{
+    const resp = await fetch('/api/setup-health', {
+      method: method || 'GET',
+      headers:{'Content-Type':'application/json'}
+    });
+    const data = await resp.json();
+    renderHealth(data);
+  }catch(e){
+    document.getElementById('overall_head').textContent = "Erro ao verificar";
+    document.getElementById('overall_desc').textContent = e.toString();
+  }
+}
+
+function renderHealth(payload){
+  const allGreen = payload.all_green;
+  const checks = payload.checks||[];
+  const settingsAfter = payload.settings_after||{};
+
+  const overallHeadEl = document.getElementById('overall_head');
+  const overallDescEl = document.getElementById('overall_desc');
+  const overallBoxEl = document.getElementById('overall_box');
+  const checksEl = document.getElementById('checks_container');
+  const debugBoxEl = document.getElementById('debug_box');
+
+  if(allGreen){
+    overallHeadEl.textContent = "✅ Produção ativa – BrokerChain pronta para rodar 24/7";
+    overallDescEl.textContent = "Sistema julga que você pode outreach, cobrar Stripe (se STRIPE_READY=pass), DocuSign automático e Auto-Dispatch.";
+    overallBoxEl.style.borderColor = "#0f0";
+  }else{
+    overallHeadEl.textContent = "🚧 Configuração pendente – ajuste os itens abaixo";
+    overallDescEl.textContent = "Enquanto existir falha crítica vermelha, nada externo dispara sozinho (Stripe, e-mail, DocuSign).";
+    overallBoxEl.style.borderColor = "#f33";
+  }
+
+  checksEl.innerHTML = "";
+  checks.forEach(ch => {
+    const row = document.createElement('div');
+    row.className = "check-row "+ch.status;
+    const line1 = document.createElement('div');
+    line1.style.fontWeight = "600";
+    line1.style.fontSize = "0.9rem";
+    line1.textContent = ch.label+" ["+ch.status.toUpperCase()+"]";
+    const line2 = document.createElement('div');
+    line2.className = "small";
+    line2.textContent = ch.details;
+    row.appendChild(line1);
+    row.appendChild(line2);
+
+    if (ch.status==="pass"){
+      setTimeout(()=>{
+        if(row && row.parentNode){ row.parentNode.removeChild(row); }
+      },5000);
+    }
+
+    checksEl.appendChild(row);
+  });
+
+  debugBoxEl.textContent = JSON.stringify(payload,null,2);
+}
+
+function toggleDebug(){
+  const box = document.getElementById('debug_box');
+  box.style.display = (box.style.display==="none") ? "block" : "none";
+}
+
+runHealth('GET');
+</script>
+
+</body>
+</html>

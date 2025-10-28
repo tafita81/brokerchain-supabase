@@ -1,0 +1,22 @@
+[build]
+  publish = "public"
+  functions = "functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# crawler e inteligência a cada 5 min
+[[scheduled.functions]]
+  cron = "*/5 * * * *"
+  path = "/api/crawl-run"
+
+[[scheduled.functions]]
+  cron = "*/5 * * * *"
+  path = "/api/intel-advisor-run"
+
+# ping diário fornecedores ativos
+[[scheduled.functions]]
+  cron = "0 13 * * *"
+  path = "/api/supplier-outreach-run"

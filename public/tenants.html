@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Tenants / Business Lines — BrokerChain Internal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; }
+    .btn-primary { @apply bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded; }
+    .btn-secondary { @apply bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium px-4 py-2 rounded border border-slate-600; }
+    .card { @apply bg-slate-900 border border-slate-800 rounded-lg p-4 mb-4 shadow-lg shadow-black/40; }
+    .label { @apply block text-slate-300 text-sm font-medium mb-1; }
+    .input { @apply w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 text-sm; }
+    .textarea { @apply w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 text-sm h-32; }
+    .select { @apply w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-slate-100 text-sm; }
+    code { @apply text-indigo-300 text-[11px] bg-slate-800/50 px-1 py-0.5 rounded; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100">
+<header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div class="text-xl font-semibold text-white">BrokerChain Dispatch Desk</div>
+    <nav class="flex flex-wrap gap-4 text-sm text-slate-300">
+      <a class="hover:text-white" href="/index.html">Home</a>
+      <a class="hover:text-white" href="/request.html">Request</a>
+      <a class="hover:text-white" href="/suppliers.html">Suppliers</a>
+      <a class="hover:text-white" href="/gov-fastlane.html">Gov Fastlane</a>
+      <a class="hover:text-white" href="/dashboard.html">Dashboard</a>
+    </nav>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-8">
+
+<h1 class="text-2xl font-semibold text-white mb-6">Business Lines (Tenants)</h1>
+
+<div class="grid md:grid-cols-2 gap-6">
+  <div class="card">
+    <div class="text-white font-semibold text-sm mb-4">Create / Update Tenant</div>
+    <form id="tenantForm" class="space-y-4 text-sm text-slate-300">
+      <div>
+        <label class="label">Tenant ID (leave blank for new)</label>
+        <input class="input" id="t_id" placeholder="emergency-dispatch-exchange">
+      </div>
+      <div>
+        <label class="label">Display Name</label>
+        <input class="input" id="t_name" placeholder="Emergency Dispatch Exchange">
+      </div>
+      <div>
+        <label class="label">Buyer Token Prefix</label>
+        <input class="input" id="t_prefix" placeholder="EMERG-">
+      </div>
+      <div>
+        <label class="label">Voice tone</label>
+        <input class="input" id="t_tone" placeholder="urgent, calm, confident, we’ll handle this for you">
+      </div>
+      <div>
+        <label class="label">Offer type</label>
+        <input class="input" id="t_offer" placeholder="emergency_field_service + urgent_parts_sourcing">
+      </div>
+      <div>
+        <label class="label">Billing model</label>
+        <input class="input" id="t_bill" placeholder="stripe_per_job_dispatch | stripe_upfront_parts | stripe_per_lead">
+      </div>
+      <div>
+        <label class="label">Geo focus</label>
+        <input class="input" id="t_geo" placeholder="US nationwide / Texas hail belt / Gulf Coast / Federal">
+      </div>
+      <div>
+        <label class="label">Ticket estimated</label>
+        <input class="input" id="t_ticket" placeholder="USD 5k–15k / job tens of thousands / etc">
+      </div>
+      <div>
+        <label class="label">Notes</label>
+        <textarea class="textarea" id="t_notes" placeholder="We answer in minutes. ZIP / urgency / are you authorized under $15k?"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="btnCreate" class="btn-primary text-xs" type="button">CREATE NEW TENANT</button>
+        <button id="btnPatch" class="btn-secondary text-xs" type="button">PATCH EXISTING TENANT</button>
+      </div>
+      <div id="tenantMsg" class="text-[11px] text-slate-500"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="text-white font-semibold text-sm mb-4">Existing Tenants</div>
+    <div id="tenantList" class="text-[11px] text-slate-300 space-y-3"></div>
+  </div>
+</div>
+
+<script>
+async function loadTenants(){
+  const r = await fetch('/api/tenants');
+  const data = await r.json();
+  const list = (data.tenants||[]);
+  const box = document.getElementById('tenantList');
+  box.innerHTML = list.map(t => `
+    <div class="border border-slate-700 rounded p-3">
+      <div class="text-white text-[12px] font-semibold mb-1">${t.name||''}</div>
+      <div class="text-slate-400 break-words">
+        id: ${t.id||''}<br>
+        prefix: ${t.buyer_token_prefix||''}<br>
+        voice_tone: ${t.voice_tone||''}<br>
+        billing: ${t.billing_model||'(n/a)'} | geo: ${t.geo||'(n/a)'}<br>
+        offer: ${t.offer_type||''}<br>
+        ticket: ${t.ticket_estimated||''}<br>
+        notes: ${t.notes||''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function createTenant(){
+  const payload = {
+    id: document.getElementById('t_id').value || undefined,
+    name: document.getElementById('t_name').value,
+    buyer_token_prefix: document.getElementById('t_prefix').value,
+    voice_tone: document.getElementById('t_tone').value,
+    offer_type: document.getElementById('t_offer').value,
+    billing_model: document.getElementById('t_bill').value,
+    geo: document.getElementById('t_geo').value,
+    ticket_estimated: document.getElementById('t_ticket').value,
+    notes: document.getElementById('t_notes').value
+  };
+  const r = await fetch('/api/tenants', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  const data = await r.json();
+  document.getElementById('tenantMsg').textContent = JSON.stringify(data);
+  loadTenants();
+}
+
+async function patchTenant(){
+  const payload = {
+    id: document.getElementById('t_id').value,
+    name: document.getElementById('t_name').value || undefined,
+    buyer_token_prefix: document.getElementById('t_prefix').value || undefined,
+    voice_tone: document.getElementById('t_tone').value || undefined,
+    offer_type: document.getElementById('t_offer').value || undefined,
+    billing_model: document.getElementById('t_bill').value || undefined,
+    geo: document.getElementById('t_geo').value || undefined,
+    ticket_estimated: document.getElementById('t_ticket').value || undefined,
+    notes: document.getElementById('t_notes').value || undefined
+  };
+  const r = await fetch('/api/tenants', {
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  const data = await r.json();
+  document.getElementById('tenantMsg').textContent = JSON.stringify(data);
+  loadTenants();
+}
+
+document.getElementById('btnCreate').addEventListener('click', createTenant);
+document.getElementById('btnPatch').addEventListener('click', patchTenant);
+
+loadTenants();
+</script>
+
+</main>
+<footer class="border-t border-slate-800 text-slate-400 text-xs py-8 px-4 max-w-6xl mx-auto">
+  <div class="grid md:grid-cols-3 gap-6">
+    <div>
+      <div class="text-slate-200 font-semibold text-sm mb-2">Services</div>
+      <div class="space-y-1">
+        <div><a class="hover:text-white" href="/emergency-dispatch.html">Emergency Dispatch Exchange (EMERG-)</a></div>
+        <div><a class="hover:text-white" href="/gov-fastlane.html">Federal Micro‑Purchase Fastlane (FED-)</a></div>
+        <div><a class="hover:text-white" href="/suppliers.html">Suppliers / Contractors</a></div>
+        <div><a class="hover:text-white" href="/marketplace.html">Lead Marketplace</a></div>
+      </div>
+    </div>
+    <div>
+      <div class="text-slate-200 font-semibold text-sm mb-2">Company</div>
+      <div class="space-y-1">
+        <div><a class="hover:text-white" href="/about.html">About</a></div>
+        <div><a class="hover:text-white" href="/contact.html">Contact</a></div>
+        <div><a class="hover:text-white" href="/terms.html">Terms</a></div>
+      </div>
+    </div>
+    <div class="text-slate-400 text-xs">
+      <div>24/7 intake. We move first so downtime doesn’t win.</div>
+      <div class="mt-2 text-[10px] text-slate-500">
+        U.S. dispatch • Stripe • Mercury • DocuSign • SAM.gov vendor ready • micro‑purchase under $15k.
+      </div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

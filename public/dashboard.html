@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#000;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BrokerChain • Painel</title>
+<style>
+body{
+  margin:0;
+  padding:16px;
+  background:#000;
+  color:#fff;
+  font-size:16px;
+  line-height:1.3rem;
+}
+h1,h2,h3{
+  margin:0 0 8px 0;
+  font-size:1rem;
+  font-weight:600;
+  color:#fff;
+}
+.card{
+  border:1px solid #444;
+  background:#0a0a0a;
+  border-radius:8px;
+  padding:16px;
+  margin-bottom:16px;
+}
+button{
+  background:#111;
+  color:#fff;
+  border:1px solid #444;
+  border-radius:6px;
+  font-size:0.8rem;
+  padding:8px 10px;
+}
+button:active{background:#222;}
+.small{
+  font-size:0.7rem;
+  color:#aaa;
+  line-height:1rem;
+}
+pre{
+  background:#111;
+  color:#0ff;
+  padding:8px;
+  font-size:0.7rem;
+  border-radius:4px;
+  max-height:200px;
+  overflow:auto;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+input,select,textarea{
+  background:#111;
+  color:#fff;
+  border:1px solid #444;
+  border-radius:6px;
+  padding:8px;
+  font-size:0.8rem;
+  width:100%;
+  box-sizing:border-box;
+  margin-bottom:8px;
+}
+.flex-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:flex-start;
+  margin-bottom:8px;
+}
+.table-like{
+  font-size:0.7rem;
+  line-height:1rem;
+  overflow-x:auto;
+  border:1px solid #333;
+  border-radius:6px;
+}
+.table-like table{
+  width:100%;
+  border-collapse:collapse;
+}
+.table-like th, .table-like td{
+  border-bottom:1px solid #333;
+  text-align:left;
+  padding:6px 8px;
+  vertical-align:top;
+  color:#fff;
+  font-weight:400;
+}
+.header-fixed-btn{
+  position:fixed;
+  top:8px;
+  right:8px;
+  z-index:9999;
+  background:#111;
+  border:1px solid #444;
+  border-radius:6px;
+  color:#fff;
+  font-size:0.8rem;
+  padding:8px 10px;
+}
+</style>
+</head>
+<body>
+
+<button class="header-fixed-btn" onclick="window.location='/setup.html'">
+  Setup / Produção
+</button>
+
+<div style="padding-top:40px;"></div>
+
+<div class="card">
+  <h1>BrokerChain • Painel Operacional</h1>
+  <div class="small">
+    Este painel roda 24/7 na Netlify. Mesmo com seu telefone desligado,
+    o crawler e a matriz IA continuam coletando leads públicos reais nos EUA.
+    Você controla tudo aqui, no iPhone.
+  </div>
+</div>
+
+<div class="card">
+  <h2>1. Controle Global</h2>
+  <div class="flex-row">
+    <button onclick="loadSettings()">Atualizar estado</button>
+    <button onclick="toggleSetting('CRAWLER_ENABLED')">Ligar/Desligar Crawler</button>
+    <button onclick="toggleSetting('INTEL_ADVISOR_ENABLED')">Ligar/Desligar Matriz IA</button>
+    <button onclick="toggleSetting('AUTO_DISPATCH_ENABLED')">Ligar/Desligar Auto-Dispatch</button>
+  </div>
+  <pre id="settings_box">carregando...</pre>
+  <div class="small">
+    AUTO_DISPATCH_ENABLED só fica realmente ligado se o sistema estiver pronto
+    (ver Setup / Produção). Enquanto houver falha crítica, setup-health força OFF.
+  </div>
+</div>
+
+<div class="card">
+  <h2>2. Fontes do Crawler (condados / estados)</h2>
+  <div class="flex-row">
+    <button onclick="refreshSources()">Refresh List</button>
+    <button onclick="runCrawler()">Run Crawler Now</button>
+  </div>
+
+  <div class="small">
+    Ative apenas fontes que você quer varrer. Cada fonte pública é um portal de
+    procurement/emergência de um condado/cidade/utilidade nos EUA.
+  </div>
+
+  <div class="flex-row" style="margin-top:8px;">
+    <div style="flex:1;min-width:220px;">
+      <h3 style="margin-top:0;">Ativar / Desativar Fonte Crawler</h3>
+      <input id="src_url" placeholder="URL exata da fonte"/>
+      <select id="src_active">
+        <option value="true">active:true</option>
+        <option value="false">active:false</option>
+      </select>
+      <button onclick="patchSource()">Atualizar Fonte</button>
+    </div>
+
+    <div style="flex:1;min-width:220px;">
+      <h3 style="margin-top:0;">Adicionar Nova Fonte Manual</h3>
+      <input id="new_url" placeholder="Nova URL pública"/>
+      <input id="new_state" placeholder="Estado ex: TX"/>
+      <input id="new_tenant" placeholder="tenantGuess"/>
+      <input id="new_cat" placeholder="categoryGuess"/>
+      <input id="new_type" placeholder="buyer_typeGuess (public/private_industrial)"/>
+      <button onclick="addSource()">Adicionar Fonte</button>
+    </div>
+  </div>
+
+  <pre id="sources_box">carregando...</pre>
+</div>
+
+<div class="card">
+  <h2>3. Matriz IA (Inteligência / Expansão)</h2>
+  <div class="flex-row">
+    <button onclick="runIntel()">Run Intelligence Now</button>
+    <button onclick="refreshIntel()">Refresh Intelligence</button>
+  </div>
+  <pre id="intel_box">carregando...</pre>
+  <div class="small">
+    A Matriz IA descobre novas páginas públicas (prefeituras, condados, utilities)
+    em estados onde a dor está mais quente nas últimas 48h
+    (gerador emergencial, bomba de inundação, HVAC quebrado,
+    telhado destruído, solar residencial correndo antes do corte de incentivo federal).
+  </div>
+</div>
+
+<div class="card">
+  <h2>4. Leads Recentes</h2>
+  <button onclick="refreshLeads()">Refresh Leads</button>
+  <div id="leads_box" class="table-like" style="margin-top:8px;">
+    carregando...
+  </div>
+  <div class="small">
+    Cada linha é um pedido público/industrial real extraído. Quando estiver verde no Setup,
+    você pode despachar fornecedor, mandar DocuSign + Stripe e cobrar fee.
+  </div>
+</div>
+
+<script>
+async function loadSettings(){
+  const r=await fetch('/api/settings');
+  const j=await r.json();
+  document.getElementById('settings_box').textContent=JSON.stringify(j,null,2);
+}
+async function toggleSetting(key){
+  const r=await fetch('/api/settings');
+  const j=await r.json();
+  if(!j.settings){return;}
+  const current=j.settings[key];
+  const body={};
+  body[key]=!current;
+  const r2=await fetch('/api/settings',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const j2=await r2.json();
+  document.getElementById('settings_box').textContent=JSON.stringify(j2,null,2);
+}
+
+async function refreshSources(){
+  const r=await fetch('/api/crawler-sources');
+  const j=await r.json();
+  document.getElementById('sources_box').textContent=JSON.stringify(j,null,2);
+}
+
+async function patchSource(){
+  const url=document.getElementById('src_url').value.trim();
+  const activeStr=document.getElementById('src_active').value;
+  const activeVal=(activeStr==="true");
+  const body={url,active:activeVal};
+  const r=await fetch('/api/crawler-sources',{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const j=await r.json();
+  document.getElementById('sources_box').textContent=JSON.stringify(j,null,2);
+}
+
+async function addSource(){
+  const body={
+    url:document.getElementById('new_url').value.trim(),
+    state:document.getElementById('new_state').value.trim(),
+    tenantGuess:document.getElementById('new_tenant').value.trim()||"federal-micro-purchase-fastlane",
+    categoryGuess:document.getElementById('new_cat').value.trim()||"general-emergency",
+    buyer_typeGuess:document.getElementById('new_type').value.trim()||"public",
+    active:false
+  };
+  const r=await fetch('/api/crawler-sources',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const j=await r.json();
+  document.getElementById('sources_box').textContent=JSON.stringify(j,null,2);
+}
+
+async function runCrawler(){
+  const r=await fetch('/api/crawl-run',{method:'POST'});
+  const j=await r.json();
+  await refreshSources();
+  await refreshLeads();
+}
+
+async function runIntel(){
+  const r=await fetch('/api/intel-advisor-run',{method:'POST'});
+  const j=await r.json();
+  document.getElementById('intel_box').textContent=JSON.stringify(j,null,2);
+  await refreshSources();
+}
+async function refreshIntel(){
+  const r=await fetch('/api/intel-advisor-run');
+  const j=await r.json();
+  document.getElementById('intel_box').textContent=JSON.stringify(j,null,2);
+}
+
+async function refreshLeads(){
+  const r=await fetch('/api/leads');
+  const j=await r.json();
+  const leads=j.leads||[];
+  let html = '<div class="table-like"><table><thead><tr><th>when(UTC)</th><th>state</th><th>tenant</th><th>urgency</th><th>authorized&lt;15k</th><th>contact</th><th>title/body</th></tr></thead><tbody>';
+  for(const L of leads.slice().reverse().slice(0,50)){
+    html += '<tr>'+
+      '<td>'+ (L.created_utc||'') +'</td>'+
+      '<td>'+ (L.state||'') +'</td>'+
+      '<td>'+ (L.tenant||'') +'</td>'+
+      '<td>'+ (L.urgency||'') +'</td>'+
+      '<td>'+ (L.authorized_under_15k? 'YES':'no') +'</td>'+
+      '<td>'+ (L.contact_email||L.contact_phone||'') +'</td>'+
+      '<td>'+ (L.title||'') +' / '+ (L.body||'').substring(0,140).replace(/</g,'&lt;') +'</td>'+
+    '</tr>';
+  }
+  html+='</tbody></table></div>';
+  document.getElementById('leads_box').innerHTML = html;
+}
+
+loadSettings();
+refreshSources();
+refreshIntel();
+refreshLeads();
+</script>
+
+</body>
+</html>

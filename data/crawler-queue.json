@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://example.gov/emergency-procurement-board",
+    "state": "FL",
+    "tenantGuess": "federal-micro-purchase-fastlane",
+    "categoryGuess": "water-mitigation",
+    "buyer_typeGuess": "public",
+    "authorized_under_15k": "unknown",
+    "active": true,
+    "last_seen_hash": "",
+    "last_crawl_utc": "",
+    "last_status": "new"
+  },
+  {
+    "url": "https://example-industrial-maintenance.com/urgent-parts",
+    "state": "TX",
+    "tenantGuess": "global-sourcing-b2b",
+    "categoryGuess": "industrial-supply",
+    "buyer_typeGuess": "private-enterprise",
+    "authorized_under_15k": "unknown",
+    "active": true,
+    "last_seen_hash": "",
+    "last_crawl_utc": "",
+    "last_status": "new"
+  }
+]
