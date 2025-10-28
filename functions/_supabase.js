@@ -341,19 +341,25 @@ async function getSettings() {
       .from('settings')
       .select('*');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error getting settings:', error);
+      throw error;
+    }
     
     // Converter para objeto simples
     const settings = {};
-    if (data) {
+    if (data && Array.isArray(data)) {
       data.forEach(row => {
-        settings[row.key] = row.value;
+        if (row && row.key !== undefined) {
+          settings[row.key] = row.value;
+        }
       });
     }
     
+    console.log(`[getSettings] Loaded ${Object.keys(settings).length} settings from Supabase`);
     return settings;
   } catch (error) {
-    console.error('Error getting settings:', error.message);
+    console.error('Error getting settings:', error.message, error);
     return {};
   }
 }
