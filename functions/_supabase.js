@@ -402,6 +402,117 @@ async function getTenants() {
 }
 
 // ============================================================================
+// CRAWLER QUEUE
+// ============================================================================
+
+async function getCrawlerQueue(filters = {}) {
+  try {
+    const client = getSupabaseClient();
+    let query = client.from('crawler_queue').select('*');
+    
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters.active !== undefined) {
+      query = query.eq('active', filters.active);
+    }
+    
+    query = query.order('priority', { ascending: false });
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error getting crawler queue:', error.message);
+    return [];
+  }
+}
+
+async function updateCrawlerQueueItem(id, updates) {
+  try {
+    const client = getSupabaseClient();
+    const { data, error } = await client
+      .from('crawler_queue')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating crawler queue item:', error.message);
+    return null;
+  }
+}
+
+async function createCrawlerQueueItem(item) {
+  try {
+    const client = getSupabaseClient();
+    
+    if (!item.id) {
+      item.id = randomId('crawler');
+    }
+    
+    const { data, error } = await client
+      .from('crawler_queue')
+      .insert(item)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating crawler queue item:', error.message);
+    return null;
+  }
+}
+
+// ============================================================================
+// INTEL REPORTS
+// ============================================================================
+
+async function getIntelReports(limit = 10) {
+  try {
+    const client = getSupabaseClient();
+    const { data, error } = await client
+      .from('intel_reports')
+      .select('*')
+      .order('created_utc', { ascending: false })
+      .limit(limit);
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error getting intel reports:', error.message);
+    return [];
+  }
+}
+
+async function createIntelReport(report) {
+  try {
+    const client = getSupabaseClient();
+    
+    if (!report.id) {
+      report.id = randomId('intel');
+    }
+    
+    const { data, error } = await client
+      .from('intel_reports')
+      .insert(report)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating intel report:', error.message);
+    return null;
+  }
+}
+
+// ============================================================================
 // UTILS
 // ============================================================================
 
@@ -448,6 +559,15 @@ module.exports = {
   
   // Tenants
   getTenants,
+  
+  // Crawler Queue
+  getCrawlerQueue,
+  updateCrawlerQueueItem,
+  createCrawlerQueueItem,
+  
+  // Intel Reports
+  getIntelReports,
+  createIntelReport,
   
   // Utils
   randomId,

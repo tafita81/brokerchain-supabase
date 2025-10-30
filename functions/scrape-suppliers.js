@@ -1,4 +1,4 @@
-// scrape-suppliers.js v20.0
+// scrape-suppliers.js v27.0 - COM SUPABASE
 // Gera fornecedores standby (TODOS os estados + DC) inclusive:
 // - Flood / Pump / Water Mitigation
 // - Roofing / Hail Emergency
@@ -10,8 +10,7 @@
 // Cada fornecedor é um candidato que pode aceitar job pago.
 // billing_pref = "stripe_per_job_dispatch" significa que ele paga por lead/job recebido.
 
-const { readJSON, pushSupplier, corsHeaders } = require('./_util.js');
-const { v4: uuidv4 } = require('uuid');
+const { createSupplier, getSettings, corsHeaders, randomId } = require('./_supabase.js');
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -61,18 +60,16 @@ function vendorsForState(st) {
       billing_pref: "stripe_per_job_dispatch"
     }
   ].map(base => ({
-    id: uuidv4(),
+    name: base.business_name,
     business_name: base.business_name,
-    contact_name: "Dispatch Desk",
     email: ("dispatch@" + base.business_name.replace(/\s+/g,'').toLowerCase() + ".example.com"),
+    phone: "+1-000-000-0000",
     phone24h: "+1-000-000-0000",
     categories: base.categories,
-    coverage_zip_regions: [ baseZipMask ],
-    billing_pref: base.billing_pref,
-    geo: base.geo,
     state: st,
-    source: "scrape",
-    created_utc: new Date().toISOString()
+    states_served: [st],
+    billing_pref: base.billing_pref,
+    active: true
   }));
 }
 
@@ -84,27 +81,36 @@ exports.handler = async (event, context) => {
     return { statusCode:405, headers:corsHeaders(), body:'Method Not Allowed' };
   }
 
-  const settings = readJSON('settings.json') || {};
-  if (!settings.SCRAPER_ENABLED) {
+  try {
+    const settings = await getSettings();
+    if (!settings.SCRAPER_ENABLED) {
+      return {
+        statusCode:200,
+        headers:corsHeaders(),
+        body:JSON.stringify({ok:true, skipped:true, reason:"SCRAPER_DISABLED"})
+      };
+    }
+
+    let totalCreated = 0;
+    for (const st of US_STATES) {
+      const arr = vendorsForState(st);
+      for (const v of arr) {
+        const created = await createSupplier(v);
+        if (created) totalCreated++;
+      }
+    }
+
     return {
       statusCode:200,
       headers:corsHeaders(),
-      body:JSON.stringify({ok:true, skipped:true, reason:"SCRAPER_DISABLED"})
+      body:JSON.stringify({ok:true, nationwide_suppliers: totalCreated})
+    };
+  } catch (error) {
+    console.error('Scrape suppliers error:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(),
+      body: JSON.stringify({ ok: false, error: error.message })
     };
   }
-
-  const createdSuppliers = [];
-  for (const st of US_STATES) {
-    const arr = vendorsForState(st);
-    arr.forEach(v => {
-      pushSupplier(v);
-      createdSuppliers.push(v);
-    });
-  }
-
-  return {
-    statusCode:200,
-    headers:corsHeaders(),
-    body:JSON.stringify({ok:true, nationwide_suppliers: createdSuppliers.length})
-  };
 };

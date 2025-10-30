@@ -7,16 +7,47 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# crawler e inteligência a cada 5 min
+# Email inbox monitoring (every 5 minutes)
+[[scheduled.functions]]
+  cron = "*/5 * * * *"
+  path = "/api/email-inbox"
+
+# Lead scraping (every 10 minutes)
+[[scheduled.functions]]
+  cron = "*/10 * * * *"
+  path = "/api/scrape-leads"
+
+# Supplier scraping (every hour)
+[[scheduled.functions]]
+  cron = "0 * * * *"
+  path = "/api/scrape-suppliers"
+
+# Brain qualification (every 5 minutes)
+[[scheduled.functions]]
+  cron = "*/5 * * * *"
+  path = "/api/brain"
+
+# Outreach generation (every 30 minutes)
+[[scheduled.functions]]
+  cron = "*/30 * * * *"
+  path = "/api/outreach-email"
+
+# Auto-dispatch (every 5 minutes)
+[[scheduled.functions]]
+  cron = "*/5 * * * *"
+  path = "/api/dispatch"
+
+# Crawler automation (every 5 minutes)
 [[scheduled.functions]]
   cron = "*/5 * * * *"
   path = "/api/crawl-run"
 
+# Intelligence advisor (every 5 minutes)
 [[scheduled.functions]]
   cron = "*/5 * * * *"
   path = "/api/intel-advisor-run"
 
-# ping diário fornecedores ativos
+# Daily supplier outreach (at 1 PM UTC daily)
 [[scheduled.functions]]
   cron = "0 13 * * *"
   path = "/api/supplier-outreach-run"
