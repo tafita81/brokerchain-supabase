@@ -31,6 +31,7 @@ Central de despacho / sourcing que roda 24/7 na Netlify Functions (serverless), 
 
 ## 📚 Documentação Atualizada
 
+- **[MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md)** - ⭐ Resumo completo de mudanças v27.0
 - **[PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md)** - Guia completo de deploy em produção
 - **[SECURITY_MONITORING.md](SECURITY_MONITORING.md)** - Segurança e monitoramento
 - **[SUPABASE_SETUP.md](SUPABASE_SETUP.md)** - Setup do banco de dados
