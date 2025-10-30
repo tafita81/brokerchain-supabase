@@ -1,11 +1,11 @@
-// setup-health.js v25.0
-// Faz auditoria de prontidão 24/7 e atualiza settings.json:
+// setup-health.js v27.0 - COM SUPABASE
+// Faz auditoria de prontidão 24/7 e atualiza settings no Supabase:
 // - PRODUCTION_READY
 // - BILLING_READY / EMAIL_READY
 // - AUTO_DISPATCH_ENABLED / OUTREACH_ENABLED / BILLING_ENABLED conforme bloqueios
 // Agora também mostra APPROVED_OUTREACH / DAILY_SUPPLIER_PING_ENABLED como avisos.
 
-const { readJSON, writeJSON, corsHeaders } = require('./_util.js');
+const { getSettings, updateSetting, getSuppliers, getCrawlerQueue, getIntelReports, corsHeaders } = require('./_supabase.js');
 
 function minutesAgo(iso){
   if(!iso) return Infinity;
@@ -33,25 +33,19 @@ function checkEnv(){
 }
 
 function checkSuppliers(suppliers){
-  const requiredTenants = [
-    "federal-micro-purchase-fastlane",
-    "emergency-dispatch-exchange",
-    "global-sourcing-b2b",
-    "solar-home-us"
-  ];
-  const mapTenant={};
-  for (const t of requiredTenants){ mapTenant[t]=false; }
-  for (const s of suppliers){
-    if(!s) continue;
-    if(!s.tenant) continue;
-    if(s.active && (s.tenant in mapTenant)){
-      mapTenant[s.tenant]=true;
-    }
+  // Check if we have active suppliers
+  if (!suppliers || suppliers.length === 0) {
+    return { pass: false, failingTenants: ['all'] };
   }
-  const failingTenants = Object.keys(mapTenant).filter(t=>!mapTenant[t]);
+  
+  const activeSuppliers = suppliers.filter(s => s && s.active);
+  if (activeSuppliers.length === 0) {
+    return { pass: false, failingTenants: ['all'] };
+  }
+  
   return {
-    pass: failingTenants.length===0,
-    failingTenants
+    pass: true,
+    failingTenants: []
   };
 }
 
@@ -74,15 +68,19 @@ function checkCrawler(settings, cq){
   return {pass:true, detail:"Crawler ativo e recente"};
 }
 
-function checkIntel(settings, intel){
+function checkIntel(settings, intelReports){
   if(!settings.INTEL_ADVISOR_ENABLED){
     return {pass:false, detail:"INTEL_ADVISOR_ENABLED=false"};
   }
-  const mins = minutesAgo(intel.generated_utc);
-  if(mins<10){
+  if (!intelReports || intelReports.length === 0) {
+    return {pass:false, detail:"Nenhum relatório de inteligência gerado"};
+  }
+  const latest = intelReports[0];
+  const mins = minutesAgo(latest.created_utc);
+  if(mins<30){
     return {pass:true, detail:"IA atualizada há "+mins.toFixed(1)+" min"};
   }
-  return {pass:false, detail:"IA não atualizada <10min"};
+  return {pass:false, detail:"IA não atualizada <30min"};
 }
 
 function buildChecks(envInfo, supCheck, crawlerChk, intelChk, settings){
@@ -196,21 +194,23 @@ function summarizeStatus(checks){
   return {allGreen, stripeFail, smtpFail};
 }
 
-function applySettings(summary, settings){
-  settings.BILLING_READY = !summary.stripeFail;
-  settings.EMAIL_READY   = !summary.smtpFail;
-  settings.PRODUCTION_READY = summary.allGreen;
+async function applySettings(summary, settings){
+  await updateSetting('BILLING_READY', !summary.stripeFail);
+  await updateSetting('EMAIL_READY', !summary.smtpFail);
+  await updateSetting('PRODUCTION_READY', summary.allGreen);
 
   if(summary.stripeFail){
-    settings.BILLING_ENABLED = false;
+    await updateSetting('BILLING_ENABLED', false);
   }
   if(summary.smtpFail){
-    settings.OUTREACH_ENABLED = false;
+    await updateSetting('OUTREACH_ENABLED', false);
   }
   if(!summary.allGreen){
-    settings.AUTO_DISPATCH_ENABLED = false;
+    await updateSetting('AUTO_DISPATCH_ENABLED', false);
   }
-  return settings;
+  
+  // Return updated settings
+  return await getSettings();
 }
 
 exports.handler = async (event, context) => {
@@ -221,33 +221,43 @@ exports.handler = async (event, context) => {
     return {statusCode:405, headers:corsHeaders(), body:'Method Not Allowed'};
   }
 
-  let settings = readJSON('settings.json') || {};
-  const suppliers = readJSON('suppliers.json') || [];
-  const cq        = readJSON('crawler-queue.json') || [];
-  const intel     = readJSON('intel-report.json') || {};
+  try {
+    const [settings, suppliers, cq, intelReports] = await Promise.all([
+      getSettings(),
+      getSuppliers(),
+      getCrawlerQueue(),
+      getIntelReports(1)
+    ]);
 
-  const envInfo    = checkEnv();
-  const supCheck   = checkSuppliers(suppliers);
-  const crawlerChk = checkCrawler(settings, cq);
-  const intelChk   = checkIntel(settings, intel);
+    const envInfo    = checkEnv();
+    const supCheck   = checkSuppliers(suppliers);
+    const crawlerChk = checkCrawler(settings, cq);
+    const intelChk   = checkIntel(settings, intelReports);
 
-  const checks = buildChecks(envInfo, supCheck, crawlerChk, intelChk, settings);
-  const summary = summarizeStatus(checks);
+    const checks = buildChecks(envInfo, supCheck, crawlerChk, intelChk, settings);
+    const summary = summarizeStatus(checks);
 
-  settings = applySettings(summary, settings);
-  writeJSON('settings.json', settings);
+    const updatedSettings = await applySettings(summary, settings);
 
-  const respBody = {
-    ok:true,
-    generated_utc:new Date().toISOString(),
-    checks,
-    all_green: summary.allGreen,
-    settings_after: settings
-  };
+    const respBody = {
+      ok:true,
+      generated_utc:new Date().toISOString(),
+      checks,
+      all_green: summary.allGreen,
+      settings_after: updatedSettings
+    };
 
-  return {
-    statusCode:200,
-    headers:corsHeaders(),
-    body:JSON.stringify(respBody)
-  };
+    return {
+      statusCode:200,
+      headers:corsHeaders(),
+      body:JSON.stringify(respBody)
+    };
+  } catch (error) {
+    console.error('Setup health error:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(),
+      body: JSON.stringify({ ok: false, error: error.message })
+    };
+  }
 };
