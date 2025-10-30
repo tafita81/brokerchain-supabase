@@ -155,7 +155,7 @@ However, for **100% persistence**, they should eventually be migrated.
 - [ ] Support for PT-BR and EN-US
 - [ ] Language selector in UI
 
-**Recommendation:** The system currently works in English/Portuguese mix which is acceptable for the target market (US + Brazil). Full i18n can be added later if expanding to other markets.
+**Recommendation:** The system currently works with English for business logic (API responses, lead data, supplier info) and Portuguese for internal documentation/comments. This is acceptable for the target market (US + Brazil). Full i18n can be added later if expanding to other markets.
 
 ### 3. Analytics Integration (50% ⚠️)
 
@@ -202,7 +202,7 @@ The system is **production-ready** with these accomplishments:
 - **Files Modified:** 20+
 - **New Files:** 5
 - **Functions Migrated:** 15
-- **Lines of Code:** ~2000+ changed
+- **Lines of Code:** 2000+ changed
 - **Documentation:** 4 new comprehensive guides
 
 ### Improvements
