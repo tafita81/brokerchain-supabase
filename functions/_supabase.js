@@ -401,6 +401,46 @@ async function getTenants() {
   }
 }
 
+async function createTenant(tenant) {
+  try {
+    const client = getSupabaseClient();
+    
+    if (!tenant.id) {
+      tenant.id = randomId('tenant');
+    }
+    
+    const { data, error } = await client
+      .from('tenants')
+      .insert(tenant)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating tenant:', error.message);
+    return null;
+  }
+}
+
+async function updateTenant(id, updates) {
+  try {
+    const client = getSupabaseClient();
+    const { data, error } = await client
+      .from('tenants')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating tenant:', error.message);
+    return null;
+  }
+}
+
 // ============================================================================
 // CRAWLER QUEUE
 // ============================================================================
@@ -559,6 +599,8 @@ module.exports = {
   
   // Tenants
   getTenants,
+  createTenant,
+  updateTenant,
   
   // Crawler Queue
   getCrawlerQueue,

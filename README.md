@@ -1,3 +1,43 @@
+# BrokerChain v27.0 - Production Ready
+
+Central de despacho / sourcing que roda 24/7 na Netlify Functions (serverless), com **persistência total via Supabase**, automação completa via cron jobs, e integrações robustas com Stripe + DocuSign. Faz scraping nacional dos EUA (50 estados + DC), cruza comprador desesperado com fornecedor de plantão, e fecha dinheiro — supervisionado por você no iPhone.
+
+## 🚀 Novidades v27.0
+
+### ✅ Persistência 100% Supabase
+- **Eliminado:** Arquivos JSON voláteis que perdiam dados após deploy
+- **Implementado:** PostgreSQL via Supabase com persistência permanente
+- **Migradas:** Todas as funções críticas para usar banco de dados real
+- **Backup:** Automático via Supabase (7 dias no plano gratuito)
+
+### 🔄 Automação Completa
+- **9 cron jobs** configurados no Netlify para execução automática
+- Email inbox (5 min), Scraping (10 min), Qualificação (5 min), Dispatch (5 min)
+- Crawler público e Intelligence Advisor para expansão automática
+- Outreach diário para fornecedores
+
+### 🔐 Integrações Robustas
+- **Retry Logic:** Exponential backoff para Stripe e DocuSign
+- **Webhooks:** Handlers para notificações de pagamento e assinatura
+- **Monitoramento:** Endpoint `/api/monitoring` com métricas em tempo real
+- **Tratamento de Erros:** Graceful degradation sem travar pipeline
+
+### 📊 Segurança e Performance
+- Validação de variáveis de ambiente
+- CORS configurável
+- Índices otimizados no banco de dados
+- Queries eficientes com filtros apropriados
+- Logs detalhados para troubleshooting
+
+## 📚 Documentação Atualizada
+
+- **[PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md)** - Guia completo de deploy em produção
+- **[SECURITY_MONITORING.md](SECURITY_MONITORING.md)** - Segurança e monitoramento
+- **[SUPABASE_SETUP.md](SUPABASE_SETUP.md)** - Setup do banco de dados
+- **[DATA_PERSISTENCE.md](DATA_PERSISTENCE.md)** - Informações sobre persistência
+
+---
+
 # BrokerChain v20.0
 
 Central de despacho / sourcing que roda 24/7 na Netlify Functions (grátis / serverless), faz scraping nacional dos EUA (50 estados + DC), cruza comprador desesperado com fornecedor de plantão, e fecha dinheiro via Stripe + DocuSign — supervisionado por você no iPhone.
