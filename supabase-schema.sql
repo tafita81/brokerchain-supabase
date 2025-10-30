@@ -49,11 +49,19 @@ CREATE TABLE IF NOT EXISTS leads (
   stripe_session_id TEXT,
   stripe_created_utc TIMESTAMP WITH TIME ZONE,
   stripe_error TEXT,
+  stripe_payment_completed BOOLEAN DEFAULT false,
+  stripe_payment_completed_utc TIMESTAMP WITH TIME ZONE,
+  stripe_payment_expired BOOLEAN DEFAULT false,
+  stripe_payment_expired_utc TIMESTAMP WITH TIME ZONE,
   
   -- DocuSign
   docusign_envelope_id TEXT,
   docusign_created_utc TIMESTAMP WITH TIME ZONE,
   docusign_error TEXT,
+  docusign_completed BOOLEAN DEFAULT false,
+  docusign_completed_utc TIMESTAMP WITH TIME ZONE,
+  docusign_declined BOOLEAN DEFAULT false,
+  docusign_declined_utc TIMESTAMP WITH TIME ZONE,
   
   -- Alertas e bloqueios
   alert_pending BOOLEAN DEFAULT false,
@@ -216,15 +224,24 @@ CREATE INDEX IF NOT EXISTS idx_email_processed ON email_inbox(processed) WHERE p
 CREATE TABLE IF NOT EXISTS crawler_queue (
   id TEXT PRIMARY KEY,
   url TEXT NOT NULL,
+  state TEXT,
+  tenant_guess TEXT,
+  category_guess TEXT,
+  buyer_type_guess TEXT,
   source TEXT,
   priority INTEGER DEFAULT 0,
   status TEXT DEFAULT 'pending',
+  active BOOLEAN DEFAULT true,
   attempts INTEGER DEFAULT 0,
   last_attempt_utc TIMESTAMP WITH TIME ZONE,
+  last_crawl_utc TIMESTAMP WITH TIME ZONE,
+  last_status TEXT,
+  last_seen_hash TEXT,
   created_utc TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_crawler_status ON crawler_queue(status, priority DESC);
+CREATE INDEX IF NOT EXISTS idx_crawler_active ON crawler_queue(active) WHERE active = true;
 
 -- ============================================================================
 -- TABELA: intel_reports

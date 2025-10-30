@@ -1,4 +1,4 @@
-// dispatch.js v26.0 - CORRIGIDO PARA NETLIFY
+// dispatch.js v27.0 - COM SUPABASE
 // Fecha dinheiro e registra Stripe + DocuSign com carimbo.
 // Suporta tenants:
 //   - emergency-dispatch-exchange (privado/comercial/residencial emergência física)
@@ -12,7 +12,7 @@
 // marcamos alert_pending no lead específico e seguimos com os outros.
 // Nada trava o restante da pipeline.
 
-const { readJSON, writeJSON, matchSupplierForLead, corsHeaders } = require('./_util.js');
+const { getLeads, updateLeads, matchSupplierForLead, getSettings, corsHeaders } = require('./_supabase.js');
 const { createCheckoutSession } = require('./_billing.js');
 const { createDocusignEnvelope } = require('./_docusign.js');
 
@@ -24,25 +24,24 @@ exports.handler = async (event, context) => {
     return { statusCode:405, headers:corsHeaders(), body:'Method Not Allowed' };
   }
 
-  const settings = readJSON('settings.json') || {};
-  if (!settings.AUTO_DISPATCH_ENABLED) {
-    return {
-      statusCode:200,
-      headers:corsHeaders(),
-      body:JSON.stringify({ok:true, skipped:true, reason:"AUTO_DISPATCH_DISABLED"})
-    };
-  }
+  try {
+    const settings = await getSettings();
+    if (!settings.AUTO_DISPATCH_ENABLED) {
+      return {
+        statusCode:200,
+        headers:corsHeaders(),
+        body:JSON.stringify({ok:true, skipped:true, reason:"AUTO_DISPATCH_DISABLED"})
+      };
+    }
 
-  const leads = readJSON('leads.json') || [];
-  const suppliers = readJSON('suppliers.json') || [];
+    const leads = await getLeads({ sale_ready: true, status: "new" });
 
-  let updatedCount = 0;
-  let checkoutCount = 0;
-  let docusignCount = 0;
-  let alertsRaised = 0;
+    let updatedCount = 0;
+    let checkoutCount = 0;
+    let docusignCount = 0;
+    let alertsRaised = 0;
 
-  for (let lead of leads) {
-    if (!(lead && lead.sale_ready && lead.status === "new")) continue;
+    for (let lead of leads) {
 
     const nowIso = new Date().toISOString();
     const isFederal = !!(lead.tenant && lead.tenant.includes("federal-micro-purchase-fastlane"));
@@ -62,7 +61,7 @@ exports.handler = async (event, context) => {
     // 2. match fornecedor
     let sup = null;
     try {
-      sup = matchSupplierForLead(lead, suppliers);
+      sup = await matchSupplierForLead(lead);
     } catch (err) {
       lead.alert_pending = true;
       lead.alert_reason = (lead.alert_reason || "") + "|matchSupplier_error";
@@ -213,7 +212,7 @@ exports.handler = async (event, context) => {
     }
   }
 
-  writeJSON('leads.json', leads);
+  await updateLeads(leads);
 
   return {
     statusCode:200,
@@ -226,4 +225,12 @@ exports.handler = async (event, context) => {
       alertsRaised
     })
   };
+  } catch (error) {
+    console.error('Dispatch error:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(),
+      body: JSON.stringify({ ok: false, error: error.message })
+    };
+  }
 };

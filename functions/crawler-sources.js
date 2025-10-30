@@ -1,93 +1,123 @@
-// crawler-sources.js v24.0
-const { readJSON, writeJSON, corsHeaders } = require('./_util.js');
+// crawler-sources.js v27.0 - COM SUPABASE
+const { getCrawlerQueue, createCrawlerQueueItem, updateCrawlerQueueItem, corsHeaders } = require('./_supabase.js');
 
 exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode:200, headers:corsHeaders(), body:'' };
   }
 
-  if (event.httpMethod === 'GET') {
-    const cq = readJSON('crawler-queue.json') || [];
-    return {
-      statusCode:200,
-      headers:corsHeaders(),
-      body:JSON.stringify({ok:true, sources:cq})
-    };
-  }
-
-  if (event.httpMethod === 'POST') {
-    let body = {};
-    try { body = JSON.parse(event.body||"{}"); } catch(e){}
-    const cq = readJSON('crawler-queue.json') || [];
-    if(!body.url){
+  try {
+    if (event.httpMethod === 'GET') {
+      const sources = await getCrawlerQueue();
       return {
-        statusCode:400,
+        statusCode:200,
         headers:corsHeaders(),
-        body:JSON.stringify({ok:false,error:"missing url"})
+        body:JSON.stringify({ok:true, sources})
       };
     }
 
-    cq.push({
-      url: body.url,
-      state: body.state || "?",
-      tenantGuess: body.tenantGuess || "federal-micro-purchase-fastlane",
-      categoryGuess: body.categoryGuess || "general-emergency",
-      buyer_typeGuess: body.buyer_typeGuess || "public",
-      active: !!body.active,
-      last_seen_hash: "",
-      last_crawl_utc: "",
-      last_status: "added-manual"
-    });
+    if (event.httpMethod === 'POST') {
+      const body = JSON.parse(event.body||"{}");
+      
+      if(!body.url){
+        return {
+          statusCode:400,
+          headers:corsHeaders(),
+          body:JSON.stringify({ok:false,error:"missing url"})
+        };
+      }
 
-    writeJSON('crawler-queue.json',cq);
-
-    return {
-      statusCode:200,
-      headers:corsHeaders(),
-      body:JSON.stringify({ok:true,sources:cq})
-    };
-  }
-
-  if (event.httpMethod === 'PATCH') {
-    let body = {};
-    try { body = JSON.parse(event.body||"{}"); } catch(e){}
-    const cq = readJSON('crawler-queue.json') || [];
-    if(!body.url){
-      return {
-        statusCode:400,
-        headers:corsHeaders(),
-        body:JSON.stringify({ok:false,error:"missing url"})
+      const newItem = {
+        url: body.url,
+        state: body.state || "?",
+        tenant_guess: body.tenantGuess || "federal-micro-purchase-fastlane",
+        category_guess: body.categoryGuess || "general-emergency",
+        buyer_type_guess: body.buyer_typeGuess || "public",
+        active: !!body.active,
+        status: "pending",
+        last_status: "added-manual"
       };
-    }
 
-    let found = false;
-    for (const item of cq){
-      if(item.url === body.url){
-        found = true;
-        if(typeof body.active === 'boolean'){
-          item.active = body.active;
-        }
-        if(body.tenantGuess){ item.tenantGuess = body.tenantGuess; }
-        if(body.categoryGuess){ item.categoryGuess = body.categoryGuess; }
-        if(body.buyer_typeGuess){ item.buyer_typeGuess = body.buyer_typeGuess; }
-        item.last_status = "updated-manual";
+      const created = await createCrawlerQueueItem(newItem);
+
+      if (created) {
+        return {
+          statusCode:200,
+          headers:corsHeaders(),
+          body:JSON.stringify({ok:true, source:created})
+        };
+      } else {
+        return {
+          statusCode:400,
+          headers:corsHeaders(),
+          body:JSON.stringify({ok:false, error:"Failed to create crawler source"})
+        };
       }
     }
 
-    if(!found){
-      return {
-        statusCode:404,
-        headers:corsHeaders(),
-        body:JSON.stringify({ok:false,error:"url_not_found"})
-      };
+    if (event.httpMethod === 'PATCH') {
+      const body = JSON.parse(event.body||"{}");
+      
+      if(!body.id && !body.url){
+        return {
+          statusCode:400,
+          headers:corsHeaders(),
+          body:JSON.stringify({ok:false,error:"missing id or url"})
+        };
+      }
+
+      // Find by URL if ID not provided
+      let itemId = body.id;
+      if (!itemId && body.url) {
+        const sources = await getCrawlerQueue();
+        const found = sources.find(s => s.url === body.url);
+        if (found) {
+          itemId = found.id;
+        }
+      }
+
+      if (!itemId) {
+        return {
+          statusCode:404,
+          headers:corsHeaders(),
+          body:JSON.stringify({ok:false,error:"source not found"})
+        };
+      }
+
+      const updates = {};
+      if(typeof body.active === 'boolean') updates.active = body.active;
+      if(body.tenantGuess) updates.tenant_guess = body.tenantGuess;
+      if(body.categoryGuess) updates.category_guess = body.categoryGuess;
+      if(body.buyer_typeGuess) updates.buyer_type_guess = body.buyer_typeGuess;
+      updates.last_status = "updated-manual";
+
+      const updated = await updateCrawlerQueueItem(itemId, updates);
+
+      if (updated) {
+        return {
+          statusCode:200,
+          headers:corsHeaders(),
+          body:JSON.stringify({ok:true, source:updated})
+        };
+      } else {
+        return {
+          statusCode:404,
+          headers:corsHeaders(),
+          body:JSON.stringify({ok:false,error:"Failed to update source"})
+        };
+      }
     }
 
-    writeJSON('crawler-queue.json',cq);
-
+    return { statusCode:405, headers:corsHeaders(), body:'Method Not Allowed' };
+  } catch (error) {
+    console.error('Crawler sources error:', error);
     return {
-      statusCode:200,
-      headers:corsHeaders(),
-      body:JSON.stringify({ok:true,sources:cq})
+      statusCode: 500,
+      headers: corsHeaders(),
+      body: JSON.stringify({ ok: false, error: error.message })
+    };
+  }
+};
     };
   }
 

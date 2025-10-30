@@ -1,5 +1,5 @@
-// leads.js v24.0
-const { readJSON, corsHeaders } = require('./_util.js');
+// leads.js v27.0 - COM SUPABASE
+const { getLeads, corsHeaders } = require('./_supabase.js');
 
 exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -9,10 +9,19 @@ exports.handler = async (event, context) => {
     return { statusCode:405, headers:corsHeaders(), body:'Method Not Allowed' };
   }
 
-  const leads = readJSON('leads.json') || [];
-  return {
-    statusCode:200,
-    headers:corsHeaders(),
-    body:JSON.stringify({ok:true,leads})
-  };
+  try {
+    const leads = await getLeads();
+    return {
+      statusCode:200,
+      headers:corsHeaders(),
+      body:JSON.stringify({ok:true,leads})
+    };
+  } catch (error) {
+    console.error('Leads error:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders(),
+      body: JSON.stringify({ ok: false, error: error.message })
+    };
+  }
 };
