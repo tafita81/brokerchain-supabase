@@ -78,7 +78,7 @@ exports.handler = async (event, context) => {
   }
 
   const cq = readJSON('crawler-queue.json') || [];
-  let leadsCreated = [];
+  const leadsCreated = [];
   let sourcesTouched = 0;
   const crypto = require('crypto');
 

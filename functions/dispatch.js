@@ -41,7 +41,7 @@ exports.handler = async (event, context) => {
   let docusignCount = 0;
   let alertsRaised = 0;
 
-  for (let lead of leads) {
+  for (const lead of leads) {
     if (!(lead && lead.sale_ready && lead.status === "new")) continue;
 
     const nowIso = new Date().toISOString();
