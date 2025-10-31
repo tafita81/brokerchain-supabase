@@ -41,9 +41,6 @@ const prodFormat = winston.format.combine(
   winston.format.json()
 );
 
-// Determinar o formato baseado no ambiente
-const logFormat = process.env.NODE_ENV === 'production' ? prodFormat : devFormat;
-
 // Transports
 const transports = [
   // Console (sempre ativo)

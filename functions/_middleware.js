@@ -146,7 +146,7 @@ const requestLogger = (req, res, next) => {
 /**
  * Handler de erros 404 (rota não encontrada)
  */
-const notFoundHandler = (req, res) => {
+const notFoundHandler = (req, res, _next) => {
   logWarn('Route not found', {
     method: req.method,
     path: req.path,
